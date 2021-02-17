@@ -1,0 +1,50 @@
+<script>
+a9n.callSDK().then(function(mpCallJsSdk){
+    console.log('CallSDK ready to work');
+    // получим внутренний номер, или идентификатор, который указан для сотрудника в настройках телефонии
+    var userPhone = mpCallJsSdk.getUserInternalNumberConfig();
+
+    mpCallJsSdk.on('connect', function () {
+        mpCallJsSdk.connected();
+    });
+
+    mpCallJsSdk.on('disconnect', function () {
+        // Событие отключения от телефонии, например, при отключении пользователя в настройках
+        // После отключения или при разрыве соединения, нужно сказать об этом Мегаплану:
+       // mpCallJsSdk.disconnected();
+    });
+
+    // Обработка события нажатия на кнопку звонка в интерфейсе Мегапалана
+    mpCallJsSdk.on('call', function(callInfo){
+        //Совершаем звонок и если успех, то:
+        var request = new XMLHttpRequest();
+        var json = JSON.stringify(callInfo);
+        request.open("POST", "https://tel.ufanet.ru/megaplan/click2call.php");
+        request.setRequestHeader('Content-Type', 'application/json');
+        console.log('Обработка события нажатия на кнопку звонка в интерфейсе Мегапалана');
+        request.send(json);
+        console.log('Response:', request.responseText);
+        mpCallJsSdk.talking(callInfo);
+        //Если ошибка звонка, то:
+        // mpCallSdk.badCall();
+    });
+
+    mpCallJsSdk.on('updateCallInfo', function(callInfo){
+         if ('talking' === callInfo.state) {
+                 mpCallSdk.talking(callInfo);
+                 console.log('this updateCallInfo', callInfo);
+         }
+    });
+
+    //После подписки на все события, проставляем возможности текущего приложения в CallSDK, после чего происходит инициализация событий
+    mpCallJsSdk.setCapabilities({
+      'WEBTALK': false, //Разговор из браузера
+      'ANSWER': false, // Ответ на звонок
+      'END_TALK': false, // Завершение вызова
+      'TRANSFER': false, // Перевод звонка
+      'AWAY_MODE': false, // Режим недоступен
+      'MUTE': false, // При наличии WEBTALK отключение микрофона
+      'CLEAR_STATE': true, // Сброс состояния (когда нет возможности завершить вызов, но нужно предоставить возможность скрыть виджет телефонии и сбросить его состояние
+    });
+});
+</script>
